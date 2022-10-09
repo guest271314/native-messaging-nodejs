@@ -1,0 +1,7 @@
+{
+  "name": "nm_node",
+  "description": "Node.js Native Messaging Host",
+  "path": "",
+  "type": "stdio",
+  "allowed_origins": []
+}
