@@ -1,11 +1,14 @@
 {
   "name": "nm-node",
   "version": "1.0",
+  "description": "Node.js Native Messaging host",
   "manifest_version": 3,
   "permissions": ["nativeMessaging"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
-  "action": {}
+  "action": {},
+  "url": "https://github.com/guest271314/native-messaging-nodejs",
+  "author": "guest271314"
 }
