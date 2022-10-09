@@ -11,4 +11,8 @@ Installation and usage on Chrome and Chromium
 7. Make sure `node` executable and `nm_node.js` are executable
 8. To test click `service worker` link in panel of unpacked extension which is DevTools for `background.js` in MV3 `ServiceWorker`, observe echo'ed message from Node.js Native Messaging host. To disconnect run `port.disconnect()`.
 
+The Native Messaging host echoes back the message passed. 
+
+Node.js exits with input >= `new Array(13107)`. QuickJS and Deno JavaScript runtimes don't exit when input >= `new Array(13107)`.
+
 For differences between OS and browser implementations see [Chrome incompatibilities](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Chrome_incompatibilities#native_messaging).
