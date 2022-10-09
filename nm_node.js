@@ -15,6 +15,8 @@ process.stdin.on('readable', () => {
   let content = new Uint8Array(length);
   content.set(input.subarray(4, length + 4));
   sendMessage(content);
+  // Mitigate RSS increasing expotentially for multiple messages 
+  // between client and host during same connectNative() connection 
   input = length = content = null;
   global.gc();
 });
@@ -30,6 +32,8 @@ function sendMessage(json) {
   output.set(header, 0);
   output.set(json, 4);
   process.stdout.write(output);
+  // Mitigate RSS increasing expotentially for multiple messages 
+  // between client and host during same connectNative() connection 
   header = output = null;
   global.gc();
 }
