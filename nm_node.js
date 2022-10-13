@@ -4,7 +4,9 @@
 // Node.js Native Messaging host constantly increases RSS during usage
 // https://github.com/nodejs/node/issues/43654
 process.env.UV_THREADPOOL_SIZE = 1;
+
 const fs = require('node:fs');
+
 function getMessage() {
   const header = new Uint32Array(1);
   const fd = fs.openSync('/dev/stdin', 'rs');
