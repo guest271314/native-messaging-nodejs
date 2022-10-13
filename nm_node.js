@@ -4,6 +4,10 @@
 // Node.js Native Messaging host constantly increases RSS during usage
 // https://github.com/nodejs/node/issues/43654
 process.env.UV_THREADPOOL_SIZE = 1;
+// Process greater than 65535 length input
+// https://github.com/nodejs/node/issues/6456
+// https://github.com/nodejs/node/issues/11568#issuecomment-282765300
+process.stdout._handle.setBlocking(true);
 
 const fs = require('node:fs');
 
@@ -27,8 +31,8 @@ function sendMessage(json) {
   output.set(header, 0);
   output.set(json, 4);
   process.stdout.write(output);
-  // Mitigate RSS increasing expotentially for multiple messages 
-  // between client and host during same connectNative() connection 
+  // Mitigate RSS increasing expotentially for multiple messages
+  // between client and host during same connectNative() connection
   header = output = null;
   global.gc();
 }
@@ -38,7 +42,7 @@ function main() {
     try {
       const message = getMessage();
       sendMessage(message);
-    } catch(e) {
+    } catch (e) {
       process.exit();
     }
   }
