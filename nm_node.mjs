@@ -1,7 +1,7 @@
 #!/usr/bin/env -S /path/to/node --max-old-space-size=6 --jitless --expose-gc --v8-pool-size=1
 // Node.js Native Messaging host
 // guest271314, 10-9-2022
-import {openSync, readSync} from 'node:fs';
+import {readSync} from 'node:fs';
 // Node.js Native Messaging host constantly increases RSS during usage
 // https://github.com/nodejs/node/issues/43654
 process.env.UV_THREADPOOL_SIZE = 1;
@@ -12,10 +12,9 @@ process.stdout._handle.setBlocking(true);
 
 function getMessage() {
   const header = new Uint32Array(1);
-  const fd = fs.openSync('/dev/stdin', 'rs');
-  fs.readSync(fd, header);
+  fs.readSync(0, header);
   const content = new Uint8Array(header[0]);
-  fs.readSync(fd, content);
+  fs.readSync(0, content);
   return content;
 }
 
