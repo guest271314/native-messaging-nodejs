@@ -1,4 +1,4 @@
-#!/usr/bin/env -S /path/to/node --max-old-space-size=6 --jitless --expose-gc --v8-pool-size=1
+#!/usr/bin/env -S ./node --max-old-space-size=6 --jitless --expose-gc --v8-pool-size=1
 // Node.js Native Messaging host
 // guest271314, 10-9-2022
 import {readSync} from 'node:fs';
