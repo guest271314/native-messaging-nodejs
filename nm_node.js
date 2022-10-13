@@ -4,22 +4,15 @@
 // Node.js Native Messaging host constantly increases RSS during usage
 // https://github.com/nodejs/node/issues/43654
 process.env.UV_THREADPOOL_SIZE = 1;
-global.gc();
-// "The implementation is such that the readable event must be used ..."
-// https://github.com/nodejs/node/discussions/43918#discussioncomment-3199654
-process.stdin.on('readable', () => {
-  // Exits with input >= new Array(13107)
-  // QuickJS and Deno don't exit when input >= new Array(13107)
-  let input = process.stdin.read();
-  let length = new DataView(input.buffer).getUint32(0, true);
-  let content = new Uint8Array(length);
-  content.set(input.subarray(4, length + 4));
-  sendMessage(content);
-  // Mitigate RSS increasing expotentially for multiple messages 
-  // between client and host during same connectNative() connection 
-  input = length = content = null;
-  global.gc();
-});
+const fs = require('node:fs');
+function getMessage() {
+  const header = new Uint32Array(1);
+  const fd = fs.openSync('/dev/stdin', 'rs');
+  fs.readSync(fd, header);
+  const content = new Uint8Array(header[0]);
+  fs.readSync(fd, content);
+  return content;
+}
 
 function sendMessage(json) {
   let header = Uint32Array.from(
@@ -37,3 +30,16 @@ function sendMessage(json) {
   header = output = null;
   global.gc();
 }
+
+function main() {
+  while (true) {
+    try {
+      const message = getMessage();
+      sendMessage(message);
+    } catch(e) {
+      process.exit();
+    }
+  }
+}
+
+main();
