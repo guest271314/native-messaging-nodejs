@@ -12,9 +12,9 @@ process.stdout._handle.setBlocking(true);
 
 function getMessage() {
   const header = new Uint32Array(1);
-  fs.readSync(0, header);
+  readSync(0, header);
   const content = new Uint8Array(header[0]);
-  fs.readSync(0, content);
+  readSync(0, content);
   return content;
 }
 
