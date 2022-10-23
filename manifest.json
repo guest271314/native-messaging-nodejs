@@ -1,5 +1,6 @@
 {
   "name": "nm-node",
+  "short_name": "nm_nodejs",
   "version": "1.0",
   "description": "Node.js Native Messaging host",
   "manifest_version": 3,
@@ -9,5 +10,5 @@
     "type": "module"
   },
   "action": {},
-  "url": "https://github.com/guest271314/native-messaging-nodejs"
+  "homepage_url": "https://github.com/guest271314/native-messaging-nodejs"
 }
