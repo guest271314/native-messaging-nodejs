@@ -10,11 +10,19 @@ process.env.UV_THREADPOOL_SIZE = 1;
 // https://github.com/nodejs/node/issues/11568#issuecomment-282765300
 process.stdout._handle.setBlocking(true);
 
+function readFullSync(fd, buf) {
+  let offset = 0;
+  while (offset < buf.byteLength) {
+    offset += readSync(fd, buf, { offset });
+  }
+  return buf;
+}
+
 function getMessage() {
   const header = new Uint32Array(1);
-  readSync(0, header);
+  readFullSync(0, header);
   const content = new Uint8Array(header[0]);
-  readSync(0, content);
+  readFullSync(0, content);
   return content;
 }
 
