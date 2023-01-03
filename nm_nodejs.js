@@ -9,7 +9,7 @@ process.env.UV_THREADPOOL_SIZE = 1;
 // https://github.com/nodejs/node/issues/6456
 // https://github.com/nodejs/node/issues/11568#issuecomment-282765300
 process.stdout._handle.setBlocking(true);
-
+// https://github.com/denoland/deno/discussions/17236#discussioncomment-4566134
 function readFullSync(fd, buf) {
   let offset = 0;
   while (offset < buf.byteLength) {
