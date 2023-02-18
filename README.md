@@ -15,3 +15,5 @@ Installation and usage on Chrome and Chromium
 The Native Messaging host echoes back the message passed. 
 
 For differences between OS and browser implementations see [Chrome incompatibilities](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Chrome_incompatibilities#native_messaging).
+
+This is FOSS. If you think a license is necessary consider WTFPLv2 https://en.wikipedia.org/wiki/WTFPL applicable.
