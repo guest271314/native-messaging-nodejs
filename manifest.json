@@ -2,12 +2,17 @@
   "name": "nm-node",
   "short_name": "nm_nodejs",
   "version": "1.0",
-  "description": "Node.js Native Messaging host",
+  "description": "Node.js Native Messaging host - full duplex",
   "manifest_version": 3,
   "permissions": ["nativeMessaging"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
+  },
+    "externally_connectable": {
+    "matches": ["https://*.github.com/*"],
+    "ids": ["*"]
   },
   "action": {},
   "homepage_url": "https://github.com/guest271314/native-messaging-nodejs"
