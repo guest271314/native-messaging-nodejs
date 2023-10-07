@@ -1,35 +1,27 @@
-#!/usr/bin/env -S ./node --max-old-space-size=6 --jitless --expose-gc --v8-pool-size=1
+#!/usr/bin/env -S node --expose-gc
 // Node.js Native Messaging host
-// guest271314, 10-9-2022
-import {readSync} from 'node:fs';
-// Node.js Native Messaging host constantly increases RSS during usage
-// https://github.com/nodejs/node/issues/43654
-process.env.UV_THREADPOOL_SIZE = 1;
-// Process greater than 65535 length input
-// https://github.com/nodejs/node/issues/6456
-// https://github.com/nodejs/node/issues/11568#issuecomment-282765300
-process.stdout._handle.setBlocking(true);
-// https://github.com/denoland/deno/discussions/17236#discussioncomment-4566134
-function readFullSync(fd, buf) {
-  let offset = 0;
-  while (offset < buf.byteLength) {
-    offset += readSync(fd, buf, { offset });
-  }
-  return buf;
-}
+// guest271314, 10-7-2023
+// Browser <=> Node.js fetch() full duplex streaming
+import { open } from "node:fs/promises";
 
-function getMessage() {
-  const header = new Uint32Array(1);
-  readFullSync(0, header);
-  const content = new Uint8Array(header[0]);
-  readFullSync(0, content);
-  return content;
-}
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
-function sendMessage(json) {
+let {
+  writable,
+  readable: body,
+} = new TransformStream();
+let abortable = new AbortController();
+let {
+  signal,
+} = abortable;
+let writer = null;
+let now = null;
+
+async function sendMessage(json) {
   let header = Uint32Array.from({
     length: 4,
-  }, (_,index)=>(json.length >> (index * 8)) & 0xff);
+  }, (_, index) => (json.length >> (index * 8)) & 0xff);
   let output = new Uint8Array(header.length + json.length);
   output.set(header, 0);
   output.set(json, 4);
@@ -38,15 +30,140 @@ function sendMessage(json) {
   // between client and host during same connectNative() connection
   header = output = null;
   global.gc();
+  return;
 }
 
-function main() {
+function encodeMessage(message) {
+  return encoder.encode(JSON.stringify(message));
+}
+
+process.on("uncaughtException", (err) => {
+  sendMessage(
+    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
+  );
+});
+
+process.on("unhandledRejection", (err) => {
+  sendMessage(
+    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
+  );
+});
+
+process.on("warning", (err) => {
+  sendMessage(
+    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
+  );
+});
+
+async function getMessage() {
+  let header = new Uint32Array(1);
+  const input = await open("/dev/stdin");
+  let { buffer, bytesRead } = await input.read({
+    buffer: header,
+  });
+  let data = new Uint8Array(header[0]);
+  await input.read({
+    buffer: data,
+  });
+  await input.close();
+  if (!writable.locked) {
+    writer = writable.getWriter();
+    const {
+      url,
+      method,
+      headers = { "Content-Type": "text/plain" },
+      duplex = "half",
+    } = JSON.parse(decoder.decode(data));
+    // Returning the Promise, or using await doesn't stream
+    return Promise.race([
+      ,
+      fetch(
+        new Request(url, {
+          // Node.js logs duplex must set (to half) for upload streaming, still doesn't work using the same code
+          duplex,
+          method,
+          headers,
+          signal,
+          body,
+        }),
+      )
+        .then(({
+          body: readable,
+        }) =>
+          readable.pipeThrough(new TextDecoderStream())
+            .pipeTo(
+              new WritableStream({
+                start() {
+                  now = performance.now();
+                  return sendMessage(
+                    encodeMessage(`Starting read stream ${now}`),
+                  );
+                },
+                write(value) {
+                  sendMessage(encoder.encode(value));
+                  global.gc();
+                },
+                async close() {
+                  sendMessage(encodeMessage("Stream closed."));
+                },
+                async abort(reason) {
+                  await sendMessage(encodeMessage({
+                    ABORT_REASON: reason,
+                    now: ((performance.now() - now) / 1000) / 60,
+                  }));
+                  process.exit();
+                },
+              }),
+            )
+        )
+        .then(async () => {
+          ({
+            writable,
+            readable: body,
+          } = new TransformStream());
+          abortable = new AbortController();
+          ({
+            signal,
+          } = abortable);
+          writer = null;
+          now = null;
+          sendMessage(encodeMessage("Stream reset after closing."));
+        })
+        .catch(async (e) => {
+          sendMessage(encodeMessage(e.message));
+        }),
+    ]);
+  } else {
+    const message = decoder.decode(data);
+    if (message === `"ABORT_STREAM"`) {
+      return abortable.abort(message);
+    }
+    if (message === `"CLOSE_STREAM"`) {
+      await writer.close();
+      return await writer.closed;
+    }
+    await writer.ready;
+    return await writer.write(data)
+      .catch(async (err) => {
+        sendMessage(
+          encodeMessage(
+            (err && err.stack) ? err.stack.toString() : err.toString(),
+          ),
+        );
+      });
+  }
+}
+
+async function main() {
   while (true) {
     try {
-      const message = getMessage();
-      sendMessage(message);
-    } catch (e) {
-      process.exit();
+      await getMessage();
+    } catch (err) {
+      sendMessage(
+        encodeMessage(
+          (err && err.stack) ? err.stack.toString() : err.toString(),
+        ),
+      );
     }
   }
 }
