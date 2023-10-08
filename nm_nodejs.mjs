@@ -1,11 +1,6 @@
 #!/usr/bin/env -S ./node --max-old-space-size=6 --jitless --expose-gc --v8-pool-size=1
 // Node.js Native Messaging host
 // guest271314, 10-9-2022
-#!/usr/bin/env -S /home/xubuntu/bin/node-v21.0.0-nightly20231001092fb9f541-linux-x64/bin/node --expose-gc
-// Node.js Native Messaging host
-// guest271314, 10-7-2023
-// Browser <=> Node.js fetch() full duplex streaming
-
 import { open } from "node:fs/promises";
 process.env.UV_THREADPOOL_SIZE = 1;
 // Process greater than 65535 length input
