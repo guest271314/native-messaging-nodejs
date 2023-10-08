@@ -1,9 +1,12 @@
 #!/usr/bin/env -S ./node --max-old-space-size=6 --jitless --expose-gc --v8-pool-size=1
 // Node.js Native Messaging host
 // guest271314, 10-9-2022
-import {readSync} from 'node:fs';
-// Node.js Native Messaging host constantly increases RSS during usage
-// https://github.com/nodejs/node/issues/43654
+#!/usr/bin/env -S /home/xubuntu/bin/node-v21.0.0-nightly20231001092fb9f541-linux-x64/bin/node --expose-gc
+// Node.js Native Messaging host
+// guest271314, 10-7-2023
+// Browser <=> Node.js fetch() full duplex streaming
+
+import { open } from "node:fs/promises";
 process.env.UV_THREADPOOL_SIZE = 1;
 // Process greater than 65535 length input
 // https://github.com/nodejs/node/issues/6456
@@ -11,22 +14,29 @@ process.env.UV_THREADPOOL_SIZE = 1;
 // https://www.reddit.com/r/node/comments/172fg10/comment/k3xcax5/
 process.stdout._handle.setBlocking(true);
 
-function getMessage() {
+async function getMessage() {
   const header = new Uint32Array(1);
-  readFullAsync(0, header);
-  const content = new Uint8Array(header[0]);
-  readFullAsync(0, content);
+  await readFullAsync(1, header);
+  const content = await readFullAsync(header[0]);
   return content;
 }
 
 // https://github.com/denoland/deno/discussions/17236#discussioncomment-4566134
 // https://github.com/saghul/txiki.js/blob/master/src/js/core/tjs/eval-stdin.js
-function readFullSync(fd, buf) {
-  let offset = 0;
-  while (offset < buf.byteLength) {
-    offset += readSync(fd, buf, { offset });
+async function readFullAsync(length, buffer = new Uint8Array(65536)) {
+  const data = [];
+  while (data.length < length) {
+    const input = await open("/dev/stdin");
+    let { bytesRead } = await input.read({
+      buffer
+    });
+    await input.close();
+    if (bytesRead === 0) {
+      break;
+    }
+    data.push(...buffer.subarray(0, bytesRead));  
   }
-  return buf;
+  return new Uint8Array(data);
 }
 
 function sendMessage(json) {
@@ -43,10 +53,10 @@ function sendMessage(json) {
   global.gc();
 }
 
-function main() {
+async function main() {
   while (true) {
     try {
-      const message = getMessage();
+      const message = await getMessage();
       sendMessage(message);
     } catch (e) {
       process.exit();
