@@ -35,7 +35,7 @@ async function readFullAsync(length, buffer = new Uint8Array(65536)) {
   return new Uint8Array(data);
 }
 
-async function sendMessage(json) {
+function sendMessage(json) {
   let header = Uint32Array.from({
     length: 4,
   }, (_, index) => (json.length >> (index * 8)) & 0xff);
