@@ -9,13 +9,6 @@ process.env.UV_THREADPOOL_SIZE = 1;
 // https://www.reddit.com/r/node/comments/172fg10/comment/k3xcax5/
 process.stdout._handle.setBlocking(true);
 
-async function getMessage() {
-  const header = new Uint32Array(1);
-  await readFullAsync(1, header);
-  const content = await readFullAsync(header[0]);
-  return content;
-}
-
 // https://github.com/denoland/deno/discussions/17236#discussioncomment-4566134
 // https://github.com/saghul/txiki.js/blob/master/src/js/core/tjs/eval-stdin.js
 async function readFullAsync(length, buffer = new Uint8Array(65536)) {
@@ -32,6 +25,13 @@ async function readFullAsync(length, buffer = new Uint8Array(65536)) {
     data.push(...buffer.subarray(0, bytesRead));  
   }
   return new Uint8Array(data);
+}
+
+async function getMessage() {
+  const header = new Uint32Array(1);
+  await readFullAsync(1, header);
+  const content = await readFullAsync(header[0]);
+  return content;
 }
 
 function sendMessage(json) {
