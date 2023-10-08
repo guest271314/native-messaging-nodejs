@@ -17,6 +17,23 @@ let {
 } = abortable;
 let writer = null;
 let now = null;
+// https://github.com/denoland/deno/discussions/17236#discussioncomment-4566134
+// https://github.com/saghul/txiki.js/blob/master/src/js/core/tjs/eval-stdin.js
+async function readFullAsync(length, buffer = new Uint8Array(65536)) {
+  const data = [];
+  while (data.length < length) {
+    const input = await open("/dev/stdin");
+    let { bytesRead } = await input.read({
+      buffer
+    });
+    await input.close();
+    if (bytesRead === 0) {
+      break;
+    }
+    data.push(...buffer.subarray(0, bytesRead));  
+  }
+  return new Uint8Array(data);
+}
 
 async function sendMessage(json) {
   let header = Uint32Array.from({
@@ -33,39 +50,9 @@ async function sendMessage(json) {
   return;
 }
 
-function encodeMessage(message) {
-  return encoder.encode(JSON.stringify(message));
-}
-
-process.on("uncaughtException", (err) => {
-  sendMessage(
-    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
-  );
-});
-
-process.on("unhandledRejection", (err) => {
-  sendMessage(
-    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
-  );
-});
-
-process.on("warning", (err) => {
-  sendMessage(
-    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
-  );
-});
-
 async function getMessage() {
-  let header = new Uint32Array(1);
-  const input = await open("/dev/stdin");
-  let { buffer, bytesRead } = await input.read({
-    buffer: header,
-  });
-  let data = new Uint8Array(header[0]);
-  await input.read({
-    buffer: data,
-  });
-  await input.close();
+  const header = await readFullAsync(1, new Uint32Array(1));  
+  const data = await readFullAsync(header[0]);
   if (!writable.locked) {
     writer = writable.getWriter();
     const {
@@ -153,6 +140,28 @@ async function getMessage() {
       });
   }
 }
+
+function encodeMessage(message) {
+  return encoder.encode(JSON.stringify(message));
+}
+
+process.on("uncaughtException", (err) => {
+  sendMessage(
+    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
+  );
+});
+
+process.on("unhandledRejection", (err) => {
+  sendMessage(
+    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
+  );
+});
+
+process.on("warning", (err) => {
+  sendMessage(
+    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
+  );
+});
 
 async function main() {
   while (true) {
