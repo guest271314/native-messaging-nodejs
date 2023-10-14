@@ -47,7 +47,7 @@ async function main() {
   while (true) {
     try {
       const message = await getMessage();
-      sendMessage(message);
+      await sendMessage(message);
     } catch (e) {
       process.exit();
     }
