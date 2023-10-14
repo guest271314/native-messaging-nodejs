@@ -34,17 +34,12 @@ async function getMessage() {
   return content;
 }
 
-function sendMessage(json) {
-  let header = Uint32Array.from({
-    length: 4,
-  }, (_,index)=>(json.length >> (index * 8)) & 0xff);
-  let output = new Uint8Array(header.length + json.length);
-  output.set(header, 0);
-  output.set(json, 4);
-  process.stdout.write(output);
-  // Mitigate RSS increasing expotentially for multiple messages
-  // between client and host during same connectNative() connection
-  header = output = null;
+async function sendMessage(message) {
+  const header = new Uint32Array([message.length]);
+  const stdout = await open(`/proc/${process.pid}/fd/1`, "w");
+  await stdout.write(header);
+  await stdout.write(message);
+  await stdout.close();
   global.gc();
 }
 
