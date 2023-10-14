@@ -17,41 +17,22 @@ let {
 } = abortable;
 let writer = null;
 let now = null;
-// https://github.com/denoland/deno/discussions/17236#discussioncomment-4566134
-// https://github.com/saghul/txiki.js/blob/master/src/js/core/tjs/eval-stdin.js
-async function readFullAsync(length, buffer = new Uint8Array(65536)) {
-  const data = [];
-  while (data.length < length) {
-    const input = await open("/dev/stdin");
-    let { bytesRead } = await input.read({
-      buffer
-    });
-    await input.close();
-    if (bytesRead === 0) {
-      break;
-    }
-    data.push(...buffer.subarray(0, bytesRead));  
-  }
-  return new Uint8Array(data);
+
+async function handleError(err) {
+  await sendMessage(
+    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
+  );
 }
 
-function sendMessage(json) {
-  let header = Uint32Array.from({
-    length: 4,
-  }, (_, index) => (json.length >> (index * 8)) & 0xff);
-  let output = new Uint8Array(header.length + json.length);
-  output.set(header, 0);
-  output.set(json, 4);
-  process.stdout.write(output);
-  // Mitigate RSS increasing expotentially for multiple messages
-  // between client and host during same connectNative() connection
-  header = output = null;
-  global.gc();
-  return;
-}
+process.on("uncaughtException", handleError);
+
+process.on("unhandledRejection", handleError);
+
+process.on("warning", handleError);
 
 async function getMessage() {
-  const header = await readFullAsync(1, new Uint32Array(1));  
+  const header = new Uint32Array(1); 
+  await readFullAsync(1, header); 
   const data = await readFullAsync(header[0]);
   if (!writable.locked) {
     writer = writable.getWriter();
@@ -80,18 +61,18 @@ async function getMessage() {
           readable.pipeThrough(new TextDecoderStream())
             .pipeTo(
               new WritableStream({
-                start() {
+                async start() {
                   now = performance.now();
                   return sendMessage(
                     encodeMessage(`Starting read stream ${now}`),
                   );
                 },
-                write(value) {
-                  sendMessage(encoder.encode(value));
+                async write(value) {
+                  await sendMessage(encoder.encode(value));
                   global.gc();
                 },
                 async close() {
-                  sendMessage(encodeMessage("Stream closed."));
+                  await sendMessage(encodeMessage("Stream closed."));
                 },
                 async abort(reason) {
                   await sendMessage(encodeMessage({
@@ -114,11 +95,9 @@ async function getMessage() {
           } = abortable);
           writer = null;
           now = null;
-          sendMessage(encodeMessage("Stream reset after closing."));
+          await sendMessage(encodeMessage("Stream reset after closing."));
         })
-        .catch(async (e) => {
-          sendMessage(encodeMessage(e.message));
-        }),
+        .catch(handleError),
     ]);
   } else {
     const message = decoder.decode(data);
@@ -131,48 +110,58 @@ async function getMessage() {
     }
     await writer.ready;
     return await writer.write(data)
-      .catch(async (err) => {
-        sendMessage(
-          encodeMessage(
-            (err && err.stack) ? err.stack.toString() : err.toString(),
-          ),
-        );
-      });
+      .catch(handleError);
   }
+}
+
+function readFullSync(fd, buffer) {
+  let offset = 0;
+  while (offset < buffer.byteLength) {
+    offset += readSync(fd, buffer, { offset });
+  }
+  return buffer;
+}
+
+async function readFullAsync(length, buffer = new Uint8Array(65536)) {
+  const data = [];
+  while (data.length < length) {
+    const input = await open("/dev/stdin");
+    let { bytesRead } = await input.read({
+      buffer
+    });
+    await input.close();
+    if (bytesRead === 0) {
+      break;
+    }
+    data.push(...buffer.subarray(0, bytesRead));  
+  }
+  return new Uint8Array(data);
+}
+
+async function sendMessage(json) {
+  // Alternatively
+  //  let header = Uint32Array.from({
+  //    length: 4,
+  //  }, (_, index) => (json.length >> (index * 8)) & 0xff);
+  const header = new Uint32Array([json.length]);
+  const stdout = await open(`/proc/${process.pid}/fd/1`, "w");
+  await stdout.write(header);
+  await stdout.write(json);
+  await stdout.close();
+  global.gc();
+  return;
 }
 
 function encodeMessage(message) {
   return encoder.encode(JSON.stringify(message));
 }
 
-process.on("uncaughtException", (err) => {
-  sendMessage(
-    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
-  );
-});
-
-process.on("unhandledRejection", (err) => {
-  sendMessage(
-    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
-  );
-});
-
-process.on("warning", (err) => {
-  sendMessage(
-    encodeMessage((err && err.stack) ? err.stack.toString() : err.toString()),
-  );
-});
-
 async function main() {
   while (true) {
     try {
-      await getMessage();
+       const message = await getMessage();   
     } catch (err) {
-      sendMessage(
-        encodeMessage(
-          (err && err.stack) ? err.stack.toString() : err.toString(),
-        ),
-      );
+      handleError(err);
     }
   }
 }
