@@ -114,14 +114,6 @@ async function getMessage() {
   }
 }
 
-function readFullSync(fd, buffer) {
-  let offset = 0;
-  while (offset < buffer.byteLength) {
-    offset += readSync(fd, buffer, { offset });
-  }
-  return buffer;
-}
-
 async function readFullAsync(length, buffer = new Uint8Array(65536)) {
   const data = [];
   while (data.length < length) {
