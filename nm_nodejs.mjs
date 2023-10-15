@@ -136,7 +136,7 @@ async function sendMessage(json) {
   //    length: 4,
   //  }, (_, index) => (json.length >> (index * 8)) & 0xff);
   const header = new Uint32Array([json.length]);
-  const stdout = await open(`/proc/${process.pid}/fd/1`, "w");
+  const stdout = await open("/proc/self/fd/1", "w");
   await stdout.write(header);
   await stdout.write(json);
   await stdout.close();
