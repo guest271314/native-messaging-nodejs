@@ -3,11 +3,6 @@
 // guest271314, 10-9-2022
 import { open } from "node:fs/promises";
 process.env.UV_THREADPOOL_SIZE = 1;
-// Process greater than 65535 length input
-// https://github.com/nodejs/node/issues/6456
-// https://github.com/nodejs/node/issues/11568#issuecomment-282765300
-// https://www.reddit.com/r/node/comments/172fg10/comment/k3xcax5/
-process.stdout._handle.setBlocking(true);
 
 // https://github.com/denoland/deno/discussions/17236#discussioncomment-4566134
 // https://github.com/saghul/txiki.js/blob/master/src/js/core/tjs/eval-stdin.js
@@ -36,7 +31,7 @@ async function getMessage() {
 
 async function sendMessage(message) {
   const header = new Uint32Array([message.length]);
-  const stdout = await open(`/proc/${process.pid}/fd/1`, "w");
+  const stdout = await open("/proc/self/fd/1", "w");
   await stdout.write(header);
   await stdout.write(message);
   await stdout.close();
