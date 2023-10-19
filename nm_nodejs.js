@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --expose-gc
+#!/usr/bin/env -S node --expose-gc --experimental-default-type=module
 // Node.js Native Messaging host
 // guest271314, 10-7-2023
 // Browser <=> Node.js fetch() full duplex streaming
