@@ -63,7 +63,7 @@ async function getMessage() {
               new WritableStream({
                 async start() {
                   now = performance.now();
-                  return sendMessage(
+                  return await sendMessage(
                     encodeMessage(`Starting read stream ${now}`),
                   );
                 },
