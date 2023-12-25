@@ -38,7 +38,7 @@ port.postMessage(`CLOSE_STREAM`);
 
 Note: Deno Deploy times out the server (the same server code used for local development commented in `nm_deno.js`) in ~5 1/2 minutes.
 
-It looks like Depo Deploy behaves similar to Chromium/Chrome MV3 extension `ServiceWorker` where without a persistent Native Messaging connection or other means, e.g., https://github.com/guest271314/persistent-serviceworker the `ServiceWorker` becomes inactive in ~5 minutes.
+It looks like Deno Deploy behaves similar to Chromium/Chrome MV3 extension `ServiceWorker` where without a persistent Native Messaging connection or other means, e.g., https://github.com/guest271314/persistent-serviceworker the `ServiceWorker` becomes inactive in ~5 minutes.
 
 So we have to write to the `writable` side of `TransformStream` to keep the `readable` side that is uploaded via `POST` active in the server.
 
