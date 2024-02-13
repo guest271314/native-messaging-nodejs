@@ -7,6 +7,8 @@ import { Duplex } from "node:stream";
 
 const { readable } = Duplex.toWeb(process.stdin);
 const { writable } = Duplex.toWeb(process.stdout);
+const buffer = new ArrayBuffer(0, { maxByteLength: 1024**2 });
+const view = new DataView(buffer);
 const encoder = new TextEncoder();
 
 function encodeMessage(message) {
@@ -14,8 +16,6 @@ function encodeMessage(message) {
 }
 
 async function* getMessage() {
-  const buffer = new ArrayBuffer(0, { maxByteLength: 1024**2 });
-  const view = new DataView(buffer);
   let messageLength = 0;
   let readOffset = 0;
   for await (let message of readable) {
@@ -40,6 +40,7 @@ async function* getMessage() {
     }
   }
 }
+
 async function sendMessage(message) {
   // Closing WritableStream causes host to exit
   await new Blob([
