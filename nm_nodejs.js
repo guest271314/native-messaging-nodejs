@@ -14,9 +14,8 @@ function encodeMessage(message) {
 }
 
 async function* getMessage() {
-  const buffer = new ArrayBuffer(0, { maxByteLength: 1048576 });
+  const buffer = new ArrayBuffer(0, { maxByteLength: 1024**2 });
   const view = new DataView(buffer);
-  let reads = 0;
   let messageLength = 0;
   let readOffset = 0;
   for await (let message of readable) {
