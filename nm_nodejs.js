@@ -1,45 +1,32 @@
 #!/usr/bin/env -S /path/to/node -experimental-default-type=module
-// Node.js Native Messaging host
+ // Node.js Native Messaging host
 // guest271314, 10-9-2022
-/*
-#!/usr/bin/env -S /home/user/bin/deno run -A /home/user/bin/nm_host.js
-#!/usr/bin/env -S /home/user/bin/node --experimental-default-type=module /home/user/bin/nm_host.js
-#!/usr/bin/env -S /home/user/bin/bun run --smol /home/user/bin/nm_host.js
-*/
 
 const runtime = navigator.userAgent;
-const buffer = new ArrayBuffer(0, { maxByteLength: 1024 ** 2 });
+const buffer = new ArrayBuffer(0, {
+  maxByteLength: 1024 ** 2
+});
 const view = new DataView(buffer);
 const encoder = new TextEncoder();
-const { dirname, filename, url } = import.meta;
+const {
+  dirname,
+  filename,
+  url
+} = import.meta;
 
-let readable, writable, exit, args;
-
-if (runtime.startsWith("Deno")) {
-  ({ readable } = Deno.stdin);
-  ({ writable } = Deno.stdout);
-  ({ exit } = Deno);
-  ({ args } = Deno);
-}
-
-if (runtime.startsWith("Node")) {
-  const { Duplex } = await import("node:stream");
-  ({ readable } = Duplex.toWeb(process.stdin));
-  ({ writable } = Duplex.toWeb(process.stdout));
-  ({ exit } = process);
-  ({ argv: args } = process);
-}
-
-if (runtime.startsWith("Bun")) {
-  readable = Bun.file("/dev/stdin").stream();
-  writable = new WritableStream({
-    async write(value) {
-      await Bun.write(Bun.stdout, value);
-    },
-  }, new CountQueuingStrategy({ highWaterMark: Infinity }));
-  ({ exit } = process);
-  ({ argv: args } = Bun);
-}
+// https://nodejs.org/api/stream.html#consuming-readable-streams-with-async-iterators
+const readable = process.stdin;
+const writable = new WritableStream({
+  write(value) {
+    process.stdout.write(value);
+  }
+});
+const {
+  exit
+} = process;
+const {
+  argv: args
+} = process;
 
 function encodeMessage(message) {
   return encoder.encode(JSON.stringify(message));
@@ -73,15 +60,21 @@ async function* getMessage() {
 
 async function sendMessage(message) {
   await new Blob([
-    new Uint8Array(new Uint32Array([message.length]).buffer),
-    message,
-  ])
+      new Uint8Array(new Uint32Array([message.length]).buffer),
+      message,
+    ])
     .stream()
-    .pipeTo(writable, { preventClose: true });
+    .pipeTo(writable, {
+      preventClose: true
+    });
 }
 
 try {
-  await sendMessage(encodeMessage([{ dirname, filename, url }, ...args]));
+  await sendMessage(encodeMessage([{
+    dirname,
+    filename,
+    url
+  }, ...args]));
   for await (const message of getMessage()) {
     await sendMessage(message);
   }
