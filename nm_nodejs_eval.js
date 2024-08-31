@@ -1,6 +1,9 @@
 #!/usr/bin/env -S /path/to/node -experimental-default-type=module
- // Node.js Native Messaging host
+// Node.js Native Messaging host
 // guest271314, 10-9-2022
+
+import { spawn } from "node:child_process";
+import { Duplex } from "node:stream";
 
 const runtime = navigator.userAgent;
 const buffer = new ArrayBuffer(0, {
@@ -21,12 +24,6 @@ const writable = new WritableStream({
     process.stdout.write(value);
   }
 });
-const {
-  exit
-} = process;
-const {
-  argv: args
-} = process;
 
 function encodeMessage(message) {
   return encoder.encode(JSON.stringify(message));
@@ -70,16 +67,15 @@ async function sendMessage(message) {
 }
 
 try {
-  await sendMessage(encodeMessage([{
-    dirname,
-    filename,
-    url
-  }, ...args]));
   for await (const message of getMessage()) {
-    await sendMessage(message);
+    const script = JSON.parse(decoder.decode(message)).slice(1, -1);
+    const { stdout, stderr } = spawn(process.argv.at(0), ["-e", script]);
+    const { readable: r, writable: w } = Duplex.toWeb(stdout);
+    const data = encodeMessage(await new Response(r).text());
+    await sendMessage(data);
   }
 } catch (e) {
-  exit();
+  process.exit();
 }
 
 /*
