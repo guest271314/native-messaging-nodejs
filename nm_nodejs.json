@@ -1,6 +1,6 @@
 {
-  "name": "nm_nodejs",
-  "description": "Node.js Native Messaging Host",
+  "name": "nm_nodejs_eval",
+  "description": "Node.js eval Native Messaging Host",
   "path": "",
   "type": "stdio",
   "allowed_origins": []
