@@ -21,5 +21,6 @@
   "action": {
     "default_title": "Node.js eval",
     "default_popup": "controller.html"
-  }
+  },
+  "homepage_url": "https://github.com/guest271314/native-messaging-nodejs/tree/eval"
 }
