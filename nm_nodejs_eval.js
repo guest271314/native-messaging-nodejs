@@ -10,12 +10,8 @@ const buffer = new ArrayBuffer(0, {
   maxByteLength: 1024 ** 2
 });
 const view = new DataView(buffer);
+const decoder = new TextDecoder();
 const encoder = new TextEncoder();
-const {
-  dirname,
-  filename,
-  url
-} = import.meta;
 
 // https://nodejs.org/api/stream.html#consuming-readable-streams-with-async-iterators
 const readable = process.stdin;
