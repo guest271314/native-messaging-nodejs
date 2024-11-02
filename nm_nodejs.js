@@ -2,19 +2,11 @@
  // Node.js Native Messaging host
 // guest271314, 10-9-2022
 
-const runtime = navigator.userAgent;
 const buffer = new ArrayBuffer(0, {
   maxByteLength: 1024 ** 2
 });
 const view = new DataView(buffer);
 const encoder = new TextEncoder();
-const {
-  dirname,
-  filename,
-  url
-} = import.meta;
-
-// https://nodejs.org/api/stream.html#consuming-readable-streams-with-async-iterators
 const readable = process.stdin;
 const writable = new WritableStream({
   write(value) {
@@ -70,11 +62,6 @@ async function sendMessage(message) {
 }
 
 try {
-  await sendMessage(encodeMessage([{
-    dirname,
-    filename,
-    url
-  }, ...args]));
   for await (const message of getMessage()) {
     await sendMessage(message);
   }
@@ -82,7 +69,6 @@ try {
   exit();
 }
 
-/*
 export {
   args,
   encodeMessage,
@@ -92,4 +78,4 @@ export {
   sendMessage,
   writable,
 };
-*/
+
