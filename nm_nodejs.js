@@ -1,5 +1,5 @@
 #!/usr/bin/env -S /path/to/node --experimental-default-type=module
- // Node.js Native Messaging host
+// Node.js Native Messaging host
 // guest271314, 10-9-2022
 
 const buffer = new ArrayBuffer(0, {
