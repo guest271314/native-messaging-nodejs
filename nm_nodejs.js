@@ -68,7 +68,6 @@ try {
 }
 
 export {
-  args,
   encodeMessage,
   exit,
   getMessage,
