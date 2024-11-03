@@ -13,11 +13,9 @@ const writable = new WritableStream({
     process.stdout.write(value);
   }
 });
+
 const {
   exit
-} = process;
-const {
-  argv: args
 } = process;
 
 function encodeMessage(message) {
