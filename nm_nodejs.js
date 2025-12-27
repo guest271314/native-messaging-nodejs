@@ -11,7 +11,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const data = Array();
 // https://github.com/nodejs/node/issues/11568#issuecomment-282765300
-process.stdout._handle.setBlocking(false);
+process.stdout?._handle?.setBlocking(false);
 
 for await (const nativeMessage of process.stdin) {
   if (currentMessageLength === 0 && data.length === 0) {
