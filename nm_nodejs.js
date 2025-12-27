@@ -2,6 +2,9 @@
 // Node.js Native Messaging host
 // guest271314, 10-9-2022
 
+// /home/user/bin/deno -A --v8-flags="--expose-gc" --unstable-bare-node-builtins
+// /home/user/bin/bun --expose-gc
+
 // try {port.postMessage(Array((209715*65)))} catch (e) {console.log(e)}
 // Error: Message exceeded maximum allowed size of 64MiB.
 // import fs from "node:fs";
